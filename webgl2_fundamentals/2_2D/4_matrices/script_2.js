@@ -1,6 +1,7 @@
 /** 
  * Usa matematica matricial para fazer as translações, rotações e escalas.
  * O vertex shader apenas calcula a posição dos vertex e o clipspace.
+ * Com o uso das matrizes, podemos fazer as operações em ordens diferentes, gerando resultados diferentes.
 */
 
 var vertexShaderSource = `#version 300 es
@@ -129,8 +130,13 @@ function main() {
     var scaleMatrix = m3.scaling(scale[0], scale[1]);
 
     // Multiply the matrices.
-    var matrix = m3.multiply(translationMatrix, rotationMatrix);
-    matrix = m3.multiply(matrix, scaleMatrix);
+    /*// Ordem antiga de calculos das matrizes
+    var matrix = m3.multiply(scaleMatrix, rotationMatrix);
+    matrix = m3.multiply(matrix, translationMatrix);*/
+    
+    // Nova ordem de calculos das matrizes.
+    var matrix = m3.multiply(scaleMatrix, rotationMatrix);
+    matrix = m3.multiply(matrix, translationMatrix);
 
     // Set the matrix.
     gl.uniformMatrix3fv(matrixLocation, false, matrix);
