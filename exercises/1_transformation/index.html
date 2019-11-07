@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Exe - 1_Transformation</title>
+        <link rel="stylesheet" type="text/css" href="style.css">
+    </head>
+
+    <body>
+        <canvas id="canvas"></canvas>
+
+        <div id="uiContainer">
+            <div id="ui">
+                <select id="objects" size="1">
+                        <option value="cube" selected>Cube</option>
+                        <option value="sphere">Sphere</option>
+                        <option value="cone">Cone</option>
+                </select>
+
+                <div id="x"></div>
+                <div id="y"></div>
+                <div id="z"></div>
+                <div id="angleX"></div>
+                <div id="angleY"></div>
+                <div id="angleZ"></div>
+                <div id="scaleX"></div>
+                <div id="scaleY"></div>
+                <div id="scaleZ"></div>
+            </div>
+        </div>
+
+        <script src="https://webgl2fundamentals.org/webgl/resources/webgl-utils.js"></script>
+        <script src="https://webgl2fundamentals.org/webgl/resources/webgl-lessons-ui.js"></script>
+        <script src="https://webgl2fundamentals.org/webgl/resources/twgl-full.min.js"></script>
+        <script src="https://webgl2fundamentals.org/webgl/resources/m4.js"></script>
+        <script src="https://webgl2fundamentals.org/webgl/resources/flattened-primitives.js"></script>
+        <script src="script.js"></script>
+    </body>
+</html>
