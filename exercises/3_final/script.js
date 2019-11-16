@@ -33,6 +33,50 @@ void main() {
 }
 `;
 
+class ObjectsToDraw {
+
+    constructor(programInfo, bufferInfo, VAO, uniforms) {
+
+        this.programInfo = programInfo;
+        this.bufferInfo = bufferInfo;
+        this.vertexArray = VAO;
+        this.uniforms = uniforms;
+    }
+}
+
+class ObjectInfo {
+
+    constructor(translation, rotation) {
+
+        this.translation = translation;
+        this.rotation = rotation;
+    }    
+}
+
+class Model {
+
+    constructor(objectToDraw, objectsNumber = 0, translationDist = [0, 0, 0], rotationDist = [0, 0, 0], initialTranslation = [0, 0, 0], initialRotation = [0, 0, 0]) {
+        
+        this.objectToDraw = objectToDraw;
+        this.objects = [];
+
+        currentTranslation = initialTranslation;
+        currentRotation = initialRotation;
+
+        for(i = 0; i < objectsNumber; i++) {
+
+            this.objects[i] = new ObjectInfo();
+        }
+    }
+}
+
+class Camera {
+
+    constructor() {
+        
+    }
+}
+
 function main() {
   // Get A WebGL context
   /** @type {HTMLCanvasElement} */
