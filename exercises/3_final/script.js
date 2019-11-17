@@ -33,39 +33,83 @@ void main() {
 }
 `;
 
-class ObjectsToDraw {
+class Uniforms {
 
-    constructor(programInfo, bufferInfo, VAO, uniforms) {
+    constructor (u_colorMult) {
 
-        this.programInfo = programInfo;
-        this.bufferInfo = bufferInfo;
-        this.vertexArray = VAO;
-        this.uniforms = uniforms;
+        this.u_colorMult = u_colorMult;
+        this.u_matrix = m4.identity();
     }
 }
 
 class ObjectInfo {
 
-    constructor(translation, rotation) {
+    constructor(translation, rotation, uniforms) {
 
         this.translation = translation;
         this.rotation = rotation;
-    }    
+        this. uniforms = uniforms
+    }
+    
+    computeMatrix(viewProjectionMatrix) {
+
+        let matrix = m4.translate(viewProjectionMatrix,
+            this.translation[0],
+            this.translation[1],
+            this.translation[2]);
+  
+        matrix = m4.xRotate(matrix, this.rotation[0]);
+        matrix = m4.yRotate(matrix, this.rotation[1]);
+        this.uniforms.u_matrix = m4.zRotate(matrix, this.rotation[2]);
+    }
 }
 
 class Model {
 
-    constructor(objectToDraw, objectsNumber = 0, translationDist = [0, 0, 0], rotationDist = [0, 0, 0], initialTranslation = [0, 0, 0], initialRotation = [0, 0, 0]) {
+    constructor(gl, vs, fs, bufferInfo, uniforms = 0, objectsNumber = 0, translationDist = [0, 0, 0], rotationDist = [0, 0, 0], initialTranslation = [0, 0, 0], initialRotation = [0, 0, 0]) {
         
-        this.objectToDraw = objectToDraw;
+        this.gl = gl;
+        this.programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+        this.bufferInfo = bufferInfo;
+        this.vertexArray = twgl.createVAOFromBufferInfo(gl, this.programInfo, bufferInfo);
+
         this.objects = [];
 
-        currentTranslation = initialTranslation;
-        currentRotation = initialRotation;
+        let currentTranslation = initialTranslation;
+        let currentRotation = initialRotation;
 
-        for(i = 0; i < objectsNumber; i++) {
+        for(let i = 0; i < objectsNumber; i++) {
 
-            this.objects[i] = new ObjectInfo();
+            this.objects[i] = new ObjectInfo(currentTranslation, currentRotation, new Uniforms([0.5, 0.5, 0.5, 1]));
+
+            currentTranslation[0] += translationDist[0];
+            currentTranslation[1] += translationDist[1];
+            currentTranslation[2] += translationDist[2];
+
+            currentRotation[0] += rotationDist[0];
+            currentRotation[1] += rotationDist[1];
+            currentRotation[2] += rotationDist[2];
+        }
+    }
+
+    computeMatrix(viewProjectionMatrix) {
+
+        for(let i = 0; i < this.objects.length; i++) {
+
+            let object = this.objects[i];
+            object.computeMatrix(viewProjectionMatrix);
+        }
+      }
+
+    draw() {
+
+        this.gl.useProgram(this.programInfo.program);
+        this.gl.bindVertexArray(this.vertexArray);
+
+        for(let i = 0; i < this.objects.length; i++) {
+
+            twgl.setUniforms(this.programInfo, this.objects[i].uniforms);
+            twgl.drawBufferInfo(this.gl, this.bufferInfo);
         }
     }
 }
@@ -73,33 +117,32 @@ class Model {
 class Camera {
 
     constructor() {
-        
+
     }
 }
 
 function main() {
-  // Get A WebGL context
-  /** @type {HTMLCanvasElement} */
+  
   var canvas = document.getElementById("canvas");
   var gl = canvas.getContext("webgl2");
   if (!gl) {
     return;
   }
 
-  // Tell the twgl to match position with a_position, n
-  // normal with a_normal etc..
-  twgl.setAttributePrefix("a_");
-
-  var sphereBufferInfo = flattenedPrimitives.createSphereBufferInfo(gl, 10, 12, 6);
-  var cubeBufferInfo   = flattenedPrimitives.createCubeBufferInfo(gl, 20);
-  var coneBufferInfo   = flattenedPrimitives.createTruncatedConeBufferInfo(gl, 10, 0, 20, 12, 1, true, false);
-
-  // setup GLSL program
   var programInfo = twgl.createProgramInfo(gl, [vs, fs]);
 
-  var sphereVAO = twgl.createVAOFromBufferInfo(gl, programInfo, sphereBufferInfo);
-  var cubeVAO   = twgl.createVAOFromBufferInfo(gl, programInfo, cubeBufferInfo);
-  var coneVAO   = twgl.createVAOFromBufferInfo(gl, programInfo, coneBufferInfo);
+  twgl.setAttributePrefix("a_");
+
+  var test_model = new Model(gl,
+                             vs,
+                             fs,
+                             flattenedPrimitives.createCubeBufferInfo(gl, 20),
+                             new Uniforms([0.5, 0.5, 0.5, 1]),
+                             2,
+                             [10, 10, 0],
+                             [0, 0, 0],
+                             [0, 0, 0],
+                             [0, 0, 0]);
 
   function degToRad(d) {
     return d * Math.PI / 180;
@@ -107,57 +150,11 @@ function main() {
 
   var fieldOfViewRadians = degToRad(60);
 
-  // Uniforms for each object.
-  var sphereUniforms = {
-    u_colorMult: [0.5, 1, 0.5, 1],
-    u_matrix: m4.identity(),
-  };
-  var cubeUniforms = {
-    u_colorMult: [1, 0.5, 0.5, 1],
-    u_matrix: m4.identity(),
-  };
-  var coneUniforms = {
-    u_colorMult: [0.5, 0.5, 1, 1],
-    u_matrix: m4.identity(),
-  };
-  var sphereTranslation = [  0, 0, 0];
-  var cubeTranslation   = [-40, 0, 0];
-  var coneTranslation   = [ 40, 0, 0];
-
-  var objectsToDraw = [
-    {
-      programInfo: programInfo,
-      bufferInfo: sphereBufferInfo,
-      vertexArray: sphereVAO,
-      uniforms: sphereUniforms,
-    },
-    {
-      programInfo: programInfo,
-      bufferInfo: cubeBufferInfo,
-      vertexArray: cubeVAO,
-      uniforms: cubeUniforms,
-    },
-    {
-      programInfo: programInfo,
-      bufferInfo: coneBufferInfo,
-      vertexArray: coneVAO,
-      uniforms: coneUniforms,
-    },
-  ];
-
-  function computeMatrix(viewProjectionMatrix, translation, xRotation, yRotation) {
-    var matrix = m4.translate(viewProjectionMatrix,
-        translation[0],
-        translation[1],
-        translation[2]);
-    matrix = m4.xRotate(matrix, xRotation);
-    return m4.yRotate(matrix, yRotation);
-  }
-
   requestAnimationFrame(drawScene);
 
   // Draw the scene.
   function drawScene(time) {
+
     time = time * 0.0005;
 
     twgl.resizeCanvasToDisplaySize(gl.canvas);
@@ -184,47 +181,11 @@ function main() {
 
     var viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
 
-    var sphereXRotation =  time;
-    var sphereYRotation =  time;
-    var cubeXRotation   = -time;
-    var cubeYRotation   =  time;
-    var coneXRotation   =  time;
-    var coneYRotation   = -time;
-
-    // Compute the matrices for each object.
-    sphereUniforms.u_matrix = computeMatrix(
-        viewProjectionMatrix,
-        sphereTranslation,
-        sphereXRotation,
-        sphereYRotation);
-
-    cubeUniforms.u_matrix = computeMatrix(
-        viewProjectionMatrix,
-        cubeTranslation,
-        cubeXRotation,
-        cubeYRotation);
-
-    coneUniforms.u_matrix = computeMatrix(
-        viewProjectionMatrix,
-        coneTranslation,
-        coneXRotation,
-        coneYRotation);
+    test_model.computeMatrix(viewProjectionMatrix);
 
     // ------ Draw the objects --------
 
-    objectsToDraw.forEach(function(object) {
-      var programInfo = object.programInfo;
-
-      gl.useProgram(programInfo.program);
-
-      // Setup all the needed attributes.
-      gl.bindVertexArray(object.vertexArray);
-
-      // Set the uniforms we just computed
-      twgl.setUniforms(programInfo, object.uniforms);
-
-      twgl.drawBufferInfo(gl, object.bufferInfo);
-    });
+    test_model.draw();
 
     requestAnimationFrame(drawScene);
   }
